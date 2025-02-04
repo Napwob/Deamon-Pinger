@@ -1,5 +1,3 @@
-#include "icmp_ping.h"
-
 #include <stdio.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
@@ -10,6 +8,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
+
+#include "icmp_ping.h"
 
 static unsigned short csum(unsigned short *addr, int len)
 {
@@ -43,7 +43,7 @@ int ICMP_ping(const char *ip_addr, int ping_number, PingData *ping_data)
     if (s < 0)
     {
         perror("Error calling socket");
-        return 0;
+        return 1;
     }
 
     struct timeval timeout;
@@ -75,14 +75,17 @@ int ICMP_ping(const char *ip_addr, int ping_number, PingData *ping_data)
     {
         if (sendto(s, &icmp_header, sizeof(icmp_header), 0, (struct sockaddr *)&sender_addr, sizeof(sender_addr)) < 0)
         {
-            perror("sendto()");
+            perror("sendto() failed");
             close(s);
             return 1;
         }
         sent++;
 
         if (recvfrom(s, &buffer, 1024, 0, (struct sockaddr *)&reciever_addr, &reciever_len) < 0)
+        {
+            perror("recvfrom() failed");
             continue;
+        }
 
         struct icmphdr *icmp_resp = (struct icmphdr *)(buffer + 20);
         if (icmp_resp->type == ICMP_ECHOREPLY)
@@ -96,6 +99,5 @@ int ICMP_ping(const char *ip_addr, int ping_number, PingData *ping_data)
     ping_data->sent = sent;
 
     close(s);
-
     return 0;
 }

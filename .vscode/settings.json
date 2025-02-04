@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "ping_stat.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "icmp_ping.h": "c",
+        "unistd.h": "c"
     }
 }

@@ -6,11 +6,14 @@
 
 static PingStat *head = NULL;
 
-void PingStat_add(const struct in_addr *addr, int sent, int received) {
-    if (!addr) return;
+void PingStat_add(const struct in_addr *addr, int sent, int received)
+{
+    if (!addr)
+        return;
 
     PingStat *new_entry = (PingStat *)malloc(sizeof(PingStat));
-    if (!new_entry) {
+    if (!new_entry)
+    {
         perror("Memory allocation error");
         exit(1);
     }
@@ -21,17 +24,23 @@ void PingStat_add(const struct in_addr *addr, int sent, int received) {
     head = new_entry;
 }
 
-void PingStat_add_s(const PingData *stat) {
-    if (!stat) return;
+void PingStat_add_s(const PingData *stat)
+{
+    if (!stat)
+        return;
     PingStat_add(&stat->addr, stat->sent, stat->received);
 }
 
-void PingStat_update(const struct in_addr *addr, int sent, int received) {
-    if (!addr) return;
+void PingStat_update(const struct in_addr *addr, int sent, int received)
+{
+    if (!addr)
+        return;
 
     PingStat *current = head;
-    while (current) {
-        if (memcmp(&current->data.addr, addr, sizeof(struct in_addr)) == 0) {
+    while (current)
+    {
+        if (memcmp(&current->data.addr, addr, sizeof(struct in_addr)) == 0)
+        {
             current->data.sent += sent;
             current->data.received += received;
             return;
@@ -41,23 +50,58 @@ void PingStat_update(const struct in_addr *addr, int sent, int received) {
     PingStat_add(addr, sent, received);
 }
 
-void PingStat_update_s(const PingData *stat) {
-    if (!stat) return;
+void PingStat_update_s(const PingData *stat)
+{
+    if (!stat)
+        return;
     PingStat_update(&stat->addr, stat->sent, stat->received);
 }
 
-void PingStat_print() {
+void PingStat_print()
+{
     PingStat *current = head;
-    while (current) {
+    while (current)
+    {
         printf("%s: sent %d, recieve %d\n",
                inet_ntoa(current->data.addr), current->data.sent, current->data.received);
         current = current->next;
     }
 }
 
-void PingStat_free() {
+void PingStat_socket_write(int fd)
+{
     PingStat *current = head;
-    while (current) {
+    char buffer[4096];
+    int offset = 0;
+
+    while (current)
+    {
+        int len = snprintf(buffer + offset, sizeof(buffer) - offset,
+                           "%s: sent %d, received %d\n",
+                           inet_ntoa(current->data.addr),
+                           current->data.sent,
+                           current->data.received);
+
+        if (len < 0 || offset + len >= sizeof(buffer))
+        {
+            break;
+        }
+
+        offset += len;
+        current = current->next;
+    }
+
+    if (offset > 0)
+    {
+        write(fd, buffer, offset);
+    }
+}
+
+void PingStat_free()
+{
+    PingStat *current = head;
+    while (current)
+    {
         PingStat *temp = current;
         current = current->next;
         free(temp);
