@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/stat.h> 
+#include <sys/stat.h>
 #include "ping_stat.h"
 
 #define PID_FILE "/var/run/ping_daemon.pid"
