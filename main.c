@@ -2,6 +2,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -45,6 +46,11 @@ int icmp_ping(char *ip_addr, int ping_number, PingData *ping_data)
         return 0;
     }
 
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
     struct sockaddr_in sender_addr;
     sender_addr.sin_family = AF_INET;
     sender_addr.sin_addr.s_addr = inet_addr(ip_addr);
@@ -70,15 +76,12 @@ int icmp_ping(char *ip_addr, int ping_number, PingData *ping_data)
         if (sendto(s, &icmp_header, sizeof(icmp_header), 0, (struct sockaddr *)&sender_addr, sizeof(sender_addr)) < 0)
         {
             perror("sendto()");
-            break;
+            return 1;
         }
         sent++;
 
         if (recvfrom(s, &buffer, 1024, 0, (struct sockaddr *)&reciever_addr, &reciever_len) < 0)
-        {
-            perror("recvfrom()");
-            break;
-        }
+            continue;
 
         struct icmphdr *icmp_resp = (struct icmphdr *)(buffer + 20);
         if (icmp_resp->type == ICMP_ECHOREPLY)
@@ -87,10 +90,10 @@ int icmp_ping(char *ip_addr, int ping_number, PingData *ping_data)
         }
     }
 
-    //printf("IP: %s %d/%d\n", ip_addr, echoreply_count, error_count);
-    // printf("Answer from %s: ICMP sequence=%d\n", inet_ntoa(reciever_addr.sin_addr), icmp_resp->un.echo.sequence);
+    // printf("IP: %s %d/%d\n", ip_addr, echoreply_count, error_count);
+    //  printf("Answer from %s: ICMP sequence=%d\n", inet_ntoa(reciever_addr.sin_addr), icmp_resp->un.echo.sequence);
 
-    ping_data->addr = reciever_addr.sin_addr;
+    ping_data->addr = sender_addr.sin_addr;
     ping_data->received = recieve;
     ping_data->sent = sent;
 
@@ -112,5 +115,8 @@ int main(int argc, char *argv[])
     PingData ping_data;
 
     icmp_ping(argv[1], ping_number, &ping_data);
-    printf("IP: %s %d/%d\n", inet_ntoa(ping_data.addr), ping_data.received, ping_data.sent);
+    PingStat_update_s(&ping_data);
+
+    PingStat_print();
+    PingStat_free();
 }

@@ -16,11 +16,14 @@ typedef struct PingStat
     struct PingStat *next;
 } PingStat;
 
-void add_stat(struct in_addr addr, int sent, int received);
-void update_stat(struct in_addr addr, int sent, int received);
-void add_stat_s(PingData stat);
-void update_stat_s(PingData stat);
-void print_stats();
-void free_stats();
+void PingStat_add(const struct in_addr *addr, int sent, int received);
+void PingStat_add_s(const PingData *stat);
+
+void PingStat_update(const struct in_addr *addr, int sent, int received);
+void PingStat_update_s(const PingData *stat);
+
+void PingStat_print();
+
+void PingStat_free();
 
 #endif // PING_STAT_H
