@@ -72,7 +72,7 @@ static void remove_socket_if_exists()
     }
 }
 
-void *ping_worker(void *args)
+static void *ping_worker(void *args)
 {
     PingThreadArgs *ping_args = (PingThreadArgs *)args;
 
