@@ -10,12 +10,20 @@
 #include <arpa/inet.h>
 #include <sys/un.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "ping_stat.h"
 #include "icmp_ping.h"
 
-int unix_socket;
 #define SOCKET_PATH "/tmp/usock"
+
+int unix_socket;
+
+typedef struct
+{
+    char ip_addr[16];
+    int ping_count;
+} PingThreadArgs;
 
 static int create_unix_socket(char *sock_path)
 {
@@ -39,7 +47,7 @@ static int create_unix_socket(char *sock_path)
     return unix_socket;
 }
 
-static inline int parse_ping_command(const char *buffer, char *ip_addr, int *ping_count)
+static int parse_ping_command(const char *buffer, char *ip_addr, int *ping_count)
 {
     if (sscanf(buffer, "ping %15s %d", ip_addr, ping_count) == 2)
     {
@@ -48,15 +56,15 @@ static inline int parse_ping_command(const char *buffer, char *ip_addr, int *pin
     return 1;
 }
 
-static inline void free_and_exit()
+static void free_and_exit()
 {
     PingStat_free();
-    unlink("/tmp/usock");
+    unlink(SOCKET_PATH);
     close(unix_socket);
     exit(1);
 }
 
-static inline void remove_socket_if_exists()
+static void remove_socket_if_exists()
 {
     if (access(SOCKET_PATH, F_OK) == 0)
     {
@@ -64,17 +72,66 @@ static inline void remove_socket_if_exists()
     }
 }
 
+void *ping_worker(void *args)
+{
+    PingThreadArgs *ping_args = (PingThreadArgs *)args;
+
+    PingData ping_data;
+    memset(&ping_data, 0, sizeof(PingData));
+
+    ICMP_ping(ping_args->ip_addr, ping_args->ping_count, &ping_data);
+    PingStat_update_s(&ping_data);
+
+    free(ping_args);
+    return NULL;
+}
+
+static void daemonize()
+{
+    pid_t pid;
+
+    pid = fork();
+
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    if (setsid() < 0)
+        exit(EXIT_FAILURE);
+
+    signal(SIGCHLD, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+
+    pid = fork();
+
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    umask(0);
+
+    chdir("/");
+
+    int x;
+    for (x = sysconf(_SC_OPEN_MAX); x>=0; x--)
+    {
+        close (x);
+    }
+}
+
 int main()
 {
+    daemonize();
+
     remove_socket_if_exists();
     signal(SIGTERM, free_and_exit);
     signal(SIGINT, free_and_exit);
 
-    PingData ping_data;
-
-    // PingStat_print();
-
-    unix_socket = create_unix_socket("/tmp/usock");
+    unix_socket = create_unix_socket(SOCKET_PATH);
     if (unix_socket < 0)
         exit(1);
 
@@ -93,18 +150,26 @@ int main()
         {
             int ping_number;
             char ip_addr[16];
-            if (parse_ping_command((const char *)&buffer, ip_addr, &ping_number) == 0)
+
+            if (parse_ping_command(buffer, ip_addr, &ping_number) == 0)
             {
-                ICMP_ping(ip_addr, ping_number, &ping_data);
-                PingStat_update_s(&ping_data);
-                write(client, "ok\n", 2);
+                PingThreadArgs *args = malloc(sizeof(PingThreadArgs));
+                strcpy(args->ip_addr, ip_addr);
+                args->ping_count = ping_number;
+
+                pthread_t thread_id;
+                pthread_create(&thread_id, NULL, ping_worker, args);
+                pthread_detach(thread_id);
+
+                write(client, "ok\n", 3);
             }
         }
-
-        if (strncmp(buffer, "show", sizeof("show") - 1) == 0)
+        else if (strncmp(buffer, "show", sizeof("show") - 1) == 0)
         {
             PingStat_socket_write(client);
         }
+
+        close(client);
     }
 
     free_and_exit();

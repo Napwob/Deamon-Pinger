@@ -1,2 +1,2 @@
 all:
-	gcc -Wall -o -lpthread main main.c ping_stat.c icmp_ping.c
+	gcc -Wall -o main main.c ping_stat.c icmp_ping.c -lpthread 

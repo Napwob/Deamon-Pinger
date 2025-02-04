@@ -25,7 +25,6 @@ void PingStat_update_s(const PingData *stat);
 void PingStat_socket_write(int fd);
 
 void PingStat_print();
-
 void PingStat_free();
 
 #endif // PING_STAT_H
