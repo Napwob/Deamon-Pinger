@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
+#include "ping_stat.h"
+
 static unsigned short csum(unsigned short *addr, int len)
 {
     int nleft = len;
@@ -34,16 +36,8 @@ static unsigned short csum(unsigned short *addr, int len)
     return answer;
 }
 
-int main(int argc, char *argv[])
+int icmp_ping(char *ip_addr, int ping_number, PingData *ping_data)
 {
-    if (argc != 3)
-    {
-        puts("Invlaid arguments count. \"sudo ./main <ip addr> <ping number>\"");
-        return 1;
-    }
-
-    int ping_number = atoi(argv[2]);
-
     int s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (s < 0)
     {
@@ -53,7 +47,7 @@ int main(int argc, char *argv[])
 
     struct sockaddr_in sender_addr;
     sender_addr.sin_family = AF_INET;
-    sender_addr.sin_addr.s_addr = inet_addr(argv[1]);
+    sender_addr.sin_addr.s_addr = inet_addr(ip_addr);
 
     struct icmphdr icmp_header;
     memset(&icmp_header, 0, sizeof(icmp_header));
@@ -68,36 +62,55 @@ int main(int argc, char *argv[])
     struct sockaddr_in reciever_addr;
     socklen_t reciever_len = sizeof(reciever_addr);
 
-    int echoreply_count = 0;
-    int error_count = 0;
+    int sent = 0;
+    int recieve = 0;
 
     for (int ping_counter = 0; ping_counter < ping_number; ping_counter++)
     {
         if (sendto(s, &icmp_header, sizeof(icmp_header), 0, (struct sockaddr *)&sender_addr, sizeof(sender_addr)) < 0)
         {
             perror("sendto()");
-            exit(3);
+            break;
         }
+        sent++;
 
         if (recvfrom(s, &buffer, 1024, 0, (struct sockaddr *)&reciever_addr, &reciever_len) < 0)
         {
             perror("recvfrom()");
-            exit(3);
+            break;
         }
 
         struct icmphdr *icmp_resp = (struct icmphdr *)(buffer + 20);
         if (icmp_resp->type == ICMP_ECHOREPLY)
         {
-            echoreply_count++;
-        }
-        else
-        {
-            error_count++;
+            recieve++;
         }
     }
 
-    printf("IP: %s %d/%d\n", argv[1], echoreply_count, error_count);
-    //printf("Answer from %s: ICMP sequence=%d\n", inet_ntoa(reciever_addr.sin_addr), icmp_resp->un.echo.sequence);
+    //printf("IP: %s %d/%d\n", ip_addr, echoreply_count, error_count);
+    // printf("Answer from %s: ICMP sequence=%d\n", inet_ntoa(reciever_addr.sin_addr), icmp_resp->un.echo.sequence);
+
+    ping_data->addr = reciever_addr.sin_addr;
+    ping_data->received = recieve;
+    ping_data->sent = sent;
 
     close(s);
+
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc != 3)
+    {
+        puts("Invlaid arguments count. \"sudo ./main <ip addr> <ping number>\"");
+        return 1;
+    }
+
+    int ping_number = atoi(argv[2]);
+
+    PingData ping_data;
+
+    icmp_ping(argv[1], ping_number, &ping_data);
+    printf("IP: %s %d/%d\n", inet_ntoa(ping_data.addr), ping_data.received, ping_data.sent);
 }
