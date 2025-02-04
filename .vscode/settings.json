@@ -3,6 +3,8 @@
         "ping_stat.h": "c",
         "types.h": "c",
         "icmp_ping.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "unix_socket.h": "c",
+        "stat.h": "c"
     }
 }

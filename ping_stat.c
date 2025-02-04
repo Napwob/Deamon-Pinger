@@ -4,6 +4,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <unistd.h> 
 
 static PingStat *head = NULL;
 static pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER;
