@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "ping_stat.h": "c"
+        "ping_stat.h": "c",
+        "types.h": "c"
     }
 }
