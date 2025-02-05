@@ -5,6 +5,7 @@
         "icmp_ping.h": "c",
         "unistd.h": "c",
         "unix_socket.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "pthread.h": "c"
     }
 }

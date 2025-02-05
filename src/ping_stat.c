@@ -4,7 +4,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <unistd.h> 
+#include <unistd.h>
 
 static PingStat *head = NULL;
 static pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -14,11 +14,11 @@ void PingStat_add(const struct in_addr *addr, int sent, int received)
     if (!addr)
         return;
 
-    PingStat *new_entry = (PingStat *)malloc(sizeof(PingStat));
+    PingStat *new_entry = (PingStat *)calloc(1, sizeof(PingStat));
     if (!new_entry)
     {
         perror("Memory allocation error");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     new_entry->data.addr = *addr;
@@ -73,12 +73,11 @@ void PingStat_print()
 {
     pthread_mutex_lock(&stat_mutex);
 
-    PingStat *current = head;
-    while (current)
+    for (PingStat *current = head; current; current = current->next)
     {
-        printf("%s: sent %d, received %d\n",
-               inet_ntoa(current->data.addr), current->data.sent, current->data.received);
-        current = current->next;
+        printf("%s: sent %d, received %d\n", inet_ntoa(current->data.addr),
+               current->data.sent,
+               current->data.received);
     }
 
     pthread_mutex_unlock(&stat_mutex);
@@ -86,6 +85,9 @@ void PingStat_print()
 
 void PingStat_socket_write(int fd)
 {
+    if (fd < 0)
+        return;
+
     pthread_mutex_lock(&stat_mutex);
 
     PingStat *current = head;
@@ -113,7 +115,10 @@ void PingStat_socket_write(int fd)
 
     if (offset > 0)
     {
-        write(fd, buffer, offset);
+        if (write(fd, buffer, offset) < 0)
+        {
+            perror("write error");
+        }
     }
 }
 
