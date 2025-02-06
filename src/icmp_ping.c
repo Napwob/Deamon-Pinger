@@ -60,8 +60,6 @@ static void config_icmp_header(struct icmphdr *icmp_header)
     icmp_header->type = ICMP_ECHO;
     icmp_header->code = 0;
     icmp_header->un.echo.id = getpid() & 0xFFFF;
-    icmp_header->un.echo.sequence = 1;
-    icmp_header->checksum = csum((unsigned short *)icmp_header, sizeof(*icmp_header));
 }
 
 int ICMP_ping(const char *ip_addr, int ping_number, PingData *ping_data)
@@ -102,6 +100,11 @@ int ICMP_ping(const char *ip_addr, int ping_number, PingData *ping_data)
 
     for (int ping_counter = 0; ping_counter < ping_number; ping_counter++)
     {
+        icmp_header.un.echo.sequence = ping_counter + 1;
+
+        icmp_header.checksum = 0;
+        icmp_header.checksum = csum((unsigned short *)&icmp_header, sizeof(icmp_header));
+
         if (sendto(s, &icmp_header, sizeof(icmp_header), 0, (struct sockaddr *)&sender_addr, sizeof(sender_addr)) < 0)
         {
             perror("sendto() failed");
