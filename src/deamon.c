@@ -60,8 +60,11 @@ int check_and_create_pid_file()
         close(fd);
         return -1;
     }
+    fsync(fd);
 
     pid_fd = fd;
+
+    atexit(remove_pid_file);
     return 0;
 }
 
@@ -87,7 +90,6 @@ void daemonize()
     pid = fork();
     if (pid < 0)
     {
-        perror("fork failed");
         exit(EXIT_FAILURE);
     }
     if (pid > 0)
@@ -101,7 +103,4 @@ void daemonize()
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
-
-    fsync(pid_fd);
-    atexit(remove_pid_file);
 }

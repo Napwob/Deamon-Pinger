@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -I./include
 LDFLAGS = -lpthread
 
-SRC = src/main.c src/ping_stat.c src/icmp_ping.c src/deamon.c src/unix_socket.c
+SRC = src/main.c src/ping_stat.c src/icmp_ping.c src/deamon.c src/unix_socket.c src/server.c
 OBJ = $(SRC:.c=.o)
 EXEC = dping
 
