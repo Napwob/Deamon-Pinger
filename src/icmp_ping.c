@@ -100,7 +100,7 @@ int ICMP_ping(const char *ip_addr, int ping_number, PingData *ping_data)
 
     for (int ping_counter = 0; ping_counter < ping_number; ping_counter++)
     {
-        icmp_header.un.echo.sequence = ping_counter + 1;
+        icmp_header.un.echo.sequence = htons(ping_counter + 1);
 
         icmp_header.checksum = 0;
         icmp_header.checksum = csum((unsigned short *)&icmp_header, sizeof(icmp_header));
