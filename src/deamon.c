@@ -35,6 +35,22 @@ static void handle_exit(int sig)
     free_and_exit();
 }
 
+int Deamon_check_pid_file()
+{
+    int fd = open(PID_FILE, O_RDWR);
+    if (fd >= 0)
+    {
+        if (flock(fd, LOCK_EX | LOCK_NB) < 0)
+        {
+            perror("Another instance is already running");
+            close(fd);
+            return -1;
+        }
+        close(fd);
+    }
+    return 0;
+}
+
 int Deamon_create_pid_file()
 {
     int fd = open(PID_FILE, O_RDWR | O_CREAT, 0666);
@@ -46,7 +62,6 @@ int Deamon_create_pid_file()
 
     if (flock(fd, LOCK_EX | LOCK_NB) < 0)
     {
-        perror("Another instance is already running");
         close(fd);
         return -1;
     }
@@ -63,7 +78,6 @@ int Deamon_create_pid_file()
     fsync(fd);
 
     pid_fd = fd;
-
     atexit(remove_pid_file);
     return 0;
 }

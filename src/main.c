@@ -17,6 +17,11 @@ static inline void show_help(void);
 
 int main(int argc, char *argv[])
 {
+    if (Deamon_check_pid_file() < 0)
+    {
+        exit(EXIT_FAILURE);
+    }
+
     switch (handle_arguments(argc, argv))
     {
     case -1:
@@ -33,6 +38,7 @@ int main(int argc, char *argv[])
 
     if (Deamon_create_pid_file() < 0)
     {
+        perror("PID file creation error");
         exit(EXIT_FAILURE);
     }
 
