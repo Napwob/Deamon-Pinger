@@ -14,7 +14,7 @@
 
 int pid_fd = -1;
 
-void remove_pid_file()
+static void remove_pid_file()
 {
     if (pid_fd >= 0)
     {
@@ -35,9 +35,9 @@ static void handle_exit(int sig)
     free_and_exit();
 }
 
-int check_and_create_pid_file()
+int Deamon_create_pid_file()
 {
-    int fd = open(PID_FILE, O_RDWR | O_CREAT, 0644);
+    int fd = open(PID_FILE, O_RDWR | O_CREAT, 0666);
     if (fd < 0)
     {
         perror("Error opening PID file");
@@ -68,7 +68,7 @@ int check_and_create_pid_file()
     return 0;
 }
 
-void daemonize()
+void Deamon_start()
 {
     pid_t pid = fork();
     if (pid < 0)

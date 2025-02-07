@@ -17,19 +17,13 @@ static inline void show_help(void);
 
 int main(int argc, char *argv[])
 {
-    if (check_and_create_pid_file() < 0)
-    {
-        exit(EXIT_FAILURE);
-    }
-
     switch (handle_arguments(argc, argv))
     {
     case -1:
         exit(EXIT_SUCCESS);
         break;
     case 0:
-        puts("Deamon mode");
-        daemonize();
+        Deamon_start();
         break;
     case 1:
         break;
@@ -37,16 +31,21 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    remove_socket_if_exists();
+    if (Deamon_create_pid_file() < 0)
+    {
+        exit(EXIT_FAILURE);
+    }
 
-    int unix_socket = create_unix_socket(SOCKET_PATH);
+    UnixSocket_remove_if_exists();
+
+    int unix_socket = UnixSocket_create(SOCKET_PATH);
     if (unix_socket < 0)
     {
         perror("Error creating UNIX socket");
         exit(EXIT_FAILURE);
     }
 
-    run_unix_socket_server(unix_socket);
+    Server_run(unix_socket);
 
     free_and_exit();
     return EXIT_SUCCESS;

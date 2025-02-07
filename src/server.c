@@ -24,7 +24,7 @@ static void launch_ping_thread(const char *ip_addr, int ping_count, int client)
     args->ping_count = ping_count;
 
     pthread_t thread_id;
-    if (pthread_create(&thread_id, NULL, ping_worker, args) != 0)
+    if (pthread_create(&thread_id, NULL, UnixSocket_ping_worker, args) != 0)
     {
         perror("pthread_create error");
         free(args);
@@ -36,7 +36,7 @@ static void launch_ping_thread(const char *ip_addr, int ping_count, int client)
         perror("write error");
 }
 
-static int parse_ping_command(const char *buffer, char *ip_addr, int *ping_count)
+static inline int parse_ping_command(const char *buffer, char *ip_addr, int *ping_count)
 {
     if (!buffer || !ip_addr || !ping_count)
         return -1;
@@ -71,11 +71,11 @@ static void handle_client_command(int client, char *buffer)
     }
 }
 
-int run_unix_socket_server(int unix_socket)
+int Server_run(int socket)
 {
     while (1)
     {
-        int client = accept(unix_socket, NULL, NULL);
+        int client = accept(socket, NULL, NULL);
         if (client < 0)
         {
             if (errno == EINTR)

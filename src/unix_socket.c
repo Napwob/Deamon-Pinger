@@ -16,7 +16,7 @@
 
 int unix_socket;
 
-int create_unix_socket(const char *sock_path)
+int UnixSocket_create(const char *sock_path)
 {
     if (!sock_path)
         return -1;
@@ -51,7 +51,7 @@ int create_unix_socket(const char *sock_path)
     return unix_socket;
 }
 
-void *ping_worker(void *args)
+void *UnixSocket_ping_worker(void *args)
 {   
     if (!args)
         return NULL;
@@ -71,7 +71,7 @@ void *ping_worker(void *args)
     return NULL;
 }
 
-void remove_socket_if_exists()
+void UnixSocket_remove_if_exists()
 {
     if (access(SOCKET_PATH, F_OK) == 0)
     {
