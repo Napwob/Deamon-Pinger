@@ -66,7 +66,7 @@ int Deamon_create_pid_file()
         return -1;
     }
 
-    char pid_str[10];
+    char pid_str[12];
     snprintf(pid_str, sizeof(pid_str), "%d\n", getpid());
     ftruncate(fd, 0);
     if (write(fd, pid_str, strlen(pid_str)) < 0)
