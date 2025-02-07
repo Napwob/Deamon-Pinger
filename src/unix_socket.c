@@ -51,14 +51,6 @@ int create_unix_socket(const char *sock_path)
     return unix_socket;
 }
 
-int parse_ping_command(const char *buffer, char *ip_addr, int *ping_count)
-{
-    if (!buffer || !ip_addr || !ping_count)
-        return -1;
-
-    return (sscanf(buffer, "ping %15s %d", ip_addr, ping_count) == 2) ? 0 : -1;
-}
-
 void *ping_worker(void *args)
 {   
     if (!args)

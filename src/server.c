@@ -36,6 +36,14 @@ static void launch_ping_thread(const char *ip_addr, int ping_count, int client)
         perror("write error");
 }
 
+static int parse_ping_command(const char *buffer, char *ip_addr, int *ping_count)
+{
+    if (!buffer || !ip_addr || !ping_count)
+        return -1;
+
+    return (sscanf(buffer, "ping %15s %d", ip_addr, ping_count) == 2) ? 0 : -1;
+}
+
 static void handle_client_command(int client, char *buffer)
 {
     if (strncmp(buffer, "ping", 4) == 0)

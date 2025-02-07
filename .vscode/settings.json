@@ -6,6 +6,7 @@
         "unistd.h": "c",
         "unix_socket.h": "c",
         "stat.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "string.h": "c"
     }
 }

@@ -10,7 +10,6 @@ typedef struct
 } PingThreadArgs;
 
 int create_unix_socket(const char *sock_path);
-int parse_ping_command(const char *buffer, char *ip_addr, int *ping_count);
 void *ping_worker(void *args);
 void remove_socket_if_exists();
 
